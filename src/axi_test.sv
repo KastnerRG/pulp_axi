@@ -22,6 +22,7 @@ package axi_test;
 
   import axi_pkg::*;
 
+`ifndef VERILATOR
   /// A driver for AXI4-Lite interface.
   class axi_lite_driver #(
     parameter int  AW = 32  ,
@@ -222,6 +223,7 @@ package axi_test;
     endtask
 
   endclass
+`endif
 
 
   /// The data transferred on a beat on the AW/AR channels.
@@ -679,6 +681,7 @@ package axi_test;
 
   endclass
 
+`ifndef VERILATOR
   class axi_rand_master #(
     // AXI interface parameters
     parameter int   AW = 32,
@@ -2597,6 +2600,7 @@ package axi_test;
     endtask
 
   endclass
+`endif
 
 endpackage
 
