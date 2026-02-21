@@ -1,0 +1,52 @@
+SHELL := /bin/bash
+
+IP  ?= axi_fifo
+VCS ?= vcs
+
+TOP      := tb_$(IP)
+FILELIST := vcs.f
+BUILD    := $(CURDIR)/build_vcs/$(IP)
+RUN_IPS  := $(filter-out %_pkg,$(sort $(patsubst tb_%.sv,%,$(notdir $(wildcard $(CURDIR)/test/tb_*.sv)))))
+TEST_PKG_SOURCES := $(sort $(wildcard $(CURDIR)/test/tb_*_pkg.sv))
+TEST_SOURCES := $(TEST_PKG_SOURCES) $(CURDIR)/test/tb_$(IP).sv
+TB_PARAM_ARGS :=
+
+ifeq ($(IP),axi_iw_converter)
+TB_PARAM_ARGS += \
+	-pvalue+tb_axi_iw_converter.TbAxiSlvPortIdWidth=4 \
+	-pvalue+tb_axi_iw_converter.TbAxiMstPortIdWidth=3 \
+	-pvalue+tb_axi_iw_converter.TbAxiSlvPortMaxUniqIds=4 \
+	-pvalue+tb_axi_iw_converter.TbAxiSlvPortMaxTxnsPerId=4 \
+	-pvalue+tb_axi_iw_converter.TbAxiSlvPortMaxTxns=16 \
+	-pvalue+tb_axi_iw_converter.TbAxiMstPortMaxUniqIds=8 \
+	-pvalue+tb_axi_iw_converter.TbAxiMstPortMaxTxnsPerId=4
+endif
+
+INC_DIRS := \
+	$(CURDIR)/include \
+	$(CURDIR)/../common_cells/include
+
+COMPILE_ARGS := \
+	-full64 -sverilog -licqueue -timescale=1ns/1ps \
+	$(addprefix +incdir+,$(INC_DIRS)) \
+	-l "$(BUILD)/vcs_compile.log" \
+	-Mdir="$(BUILD)/csrc" \
+	-o "$(BUILD)/simv" \
+	-f "$(FILELIST)" \
+	$(TEST_SOURCES) \
+	$(TB_PARAM_ARGS) \
+	-top $(TOP)
+
+.PHONY: run clean
+
+run:
+	@if ! echo " $(RUN_IPS) " | grep -q " $(IP) "; then \
+		echo "Unsupported IP '$(IP)'. Available: $(RUN_IPS)"; \
+		exit 2; \
+	fi
+	@mkdir -p "$(BUILD)"
+	$(VCS) $(COMPILE_ARGS)
+	cd "$(BUILD)" && ./simv +vcs+finish+1
+
+clean:
+	@rm -rf "$(CURDIR)/build_vcs"

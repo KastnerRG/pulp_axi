@@ -1,3 +1,4 @@
+build_vcs
 .*
 !.git*
 !.ci/
